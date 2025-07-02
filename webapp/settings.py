@@ -1,6 +1,7 @@
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / 'monitor' / 'zbxTelegram_files'
 SECRET_KEY = 'dummy'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
@@ -17,8 +18,8 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 
 # Telegram and Zabbix configuration
 config_exc_info = False
-config_cache_file = './zbxTelegram_files/id.cache'
-config_log_file = './zbxTelegram_files/znt.log'
+config_cache_file = str(DATA_DIR / 'id.cache')
+config_log_file = str(DATA_DIR / 'znt.log')
 
 tg_proxy = False
 tg_proxy_server = {'https': 'socks5://username:password@domen:port'}
@@ -26,7 +27,7 @@ tg_token = '123123123123:ADDDD_er9beG-fGx33ktYqFkUpAdUtWe2s'
 
 watermark = True
 watermark_label = 'Dmitry Sokolov (https://github.com/xxsokolov)'
-watermark_font = './zbxTelegram_files/ArialMT.ttf'
+watermark_font = str(DATA_DIR / 'ArialMT.ttf')
 watermark_minimal_height = 30
 watermark_fill = 255
 watermark_rotate = 0

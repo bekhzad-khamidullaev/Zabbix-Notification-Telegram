@@ -17,7 +17,7 @@ This project provides a Telegram bot and a small Django web application for inte
 ## Usage
 Start the polling bot:
 ```bash
-python3 bot.py
+python3 webapp/monitor/bot.py
 ```
 
 Run the web application for API access:
