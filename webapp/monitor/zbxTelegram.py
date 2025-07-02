@@ -1,4 +1,4 @@
-#!/usr/lib/zabbix/alertscripts/venv/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ########################
 #    Sokolov Dmitry    #
@@ -12,9 +12,14 @@ __license__ = "MIT"
 import telebot
 from telebot import apihelper
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from zbxTelegram_files.classes.argparser import ArgParsing
+from .argparser import ArgParsing
 import xmltodict
-from zbxTelegram_config import *
+from django.conf import settings
+
+# export configuration values from Django settings into module namespace
+for _attr in dir(settings):
+    if _attr.startswith(('config_', 'tg_', 'watermark', 'body_', 'trigger_', 'zabbix_')):
+        globals()[_attr] = getattr(settings, _attr)
 import requests
 import urllib3
 import re
@@ -22,6 +27,7 @@ import sys
 import os
 import io
 from PIL import Image, ImageDraw, ImageFont
+from openpyxl import Workbook
 import json
 from errno import ENOENT
 import logging
@@ -192,6 +198,165 @@ def get_chart_png(itemid, graff_name, period=None):
             return dict(img=None, url=None)
     except Exception as err:
         loggings.error("Exception occurred: {}".format(err), exc_info=config_exc_info), exit(1)
+
+
+def zabbix_api_auth():
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "user.login",
+        "params": {
+            "user": zabbix_api_login,
+            "password": zabbix_api_pass
+        },
+        "id": 1
+    }
+    try:
+        response = requests.post(os.path.join(zabbix_api_url, 'api_jsonrpc.php'), json=payload, verify=False)
+        data = response.json()
+        return data.get('result')
+    except Exception as err:
+        loggings.error("Zabbix API auth error: {}".format(err), exc_info=config_exc_info)
+        return None
+
+
+def zabbix_api_request(method, params=None):
+    if not hasattr(zabbix_api_request, 'auth'):
+        zabbix_api_request.auth = zabbix_api_auth()
+    payload = {
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params or {},
+        "auth": zabbix_api_request.auth,
+        "id": 1
+    }
+    try:
+        response = requests.post(os.path.join(zabbix_api_url, 'api_jsonrpc.php'), json=payload, verify=False)
+        result = response.json()
+        if 'result' in result:
+            return result['result']
+        else:
+            loggings.error('API call error {}: {}'.format(method, result))
+            return None
+    except Exception as err:
+        loggings.error("Zabbix API request error: {}".format(err), exc_info=config_exc_info)
+        return None
+
+
+def get_zabbix_user(tg_id):
+    """Lookup user in Zabbix by Telegram ID stored as alias."""
+    res = zabbix_api_request('user.get', {
+        'filter': {'alias': str(tg_id)},
+        'output': ['userid', 'type', 'name']
+    }) or []
+    return res[0] if res else None
+
+
+def get_offline_hosts(groups=None):
+    params = {
+        "output": ["host"],
+        "selectInterfaces": ["available"],
+        "selectGroups": ["name", "groupid"],
+        "filter": {"status": "0"}
+    }
+    group_ids = []
+    if groups:
+        groups = [g.strip() for g in groups.split(',') if g.strip()]
+        if groups:
+            res = zabbix_api_request('hostgroup.get', {
+                "output": ["groupid", "name"],
+                "filter": {"name": groups}
+            }) or []
+            group_ids = [g['groupid'] for g in res]
+            if group_ids:
+                params['groupids'] = group_ids
+    hosts = zabbix_api_request('host.get', params) or []
+    offline = []
+    for host in hosts:
+        interfaces = host.get('interfaces', [])
+        if any(int(iface.get('available', 0)) == 2 for iface in interfaces):
+            host_groups = host.get('groups', [])
+            if group_ids:
+                host_groups = [g for g in host_groups if g['groupid'] in group_ids]
+            for grp in host_groups:
+                offline.append((grp['name'], host['host']))
+    return offline
+
+
+def send_offline_hosts(sent_to, groups=None):
+    offline = get_offline_hosts(groups)
+    send_id = get_send_id(sent_to)
+    if offline:
+        wb = Workbook()
+        ws = wb.active
+        ws.append(['Group', 'Host'])
+        for grp, host in offline:
+            ws.append([grp, host])
+        file_buf = io.BytesIO()
+        wb.save(file_buf)
+        file_buf.seek(0)
+        file_buf.name = 'offline_hosts.xlsx'
+        bot.send_document(chat_id=send_id, document=file_buf,
+                          caption='Offline hosts: {}'.format(len(offline)))
+    else:
+        bot.send_message(chat_id=send_id, text='No offline hosts found')
+
+
+def get_problems(groups=None, severity=None, limit=10):
+    params = {
+        'output': ['eventid', 'name', 'clock', 'severity'],
+        'sortfield': 'clock',
+        'sortorder': 'DESC',
+        'limit': limit,
+        'selectHosts': ['host'],
+    }
+    group_ids = []
+    if groups:
+        groups = [g.strip() for g in groups.split(',') if g.strip()]
+        if groups:
+            res = zabbix_api_request('hostgroup.get', {
+                'output': ['groupid', 'name'],
+                'filter': {'name': groups}
+            }) or []
+            group_ids = [g['groupid'] for g in res]
+            if group_ids:
+                params['groupids'] = group_ids
+    if severity is not None:
+        params['min_severity'] = int(severity)
+    problems = zabbix_api_request('problem.get', params) or []
+    result = []
+    for pr in problems:
+        host = pr.get('hosts', [{}])[0].get('host')
+        result.append(
+            (host, pr.get('name'), pr.get('severity'), pr.get('clock')))
+    return result
+
+
+def send_problems(sent_to, groups=None, severity=None, limit=10):
+    send_id = get_send_id(sent_to)
+    problems = get_problems(groups, severity, limit)
+    if not problems:
+        bot.send_message(send_id, 'No active problems')
+        return
+    lines = []
+    for host, name, sev, clk in problems:
+        lines.append('{}: {} (S{}) at {}'.format(host, name, sev, clk))
+    bot.send_message(send_id, '\n'.join(lines))
+
+
+def get_event_groups(eventid):
+    data = zabbix_api_request('event.get', {
+        'eventids': [eventid],
+        'selectHosts': ['hostid']
+    }) or []
+    if data and data[0].get('hosts'):
+        hostid = data[0]['hosts'][0].get('hostid')
+        hosts = zabbix_api_request('host.get', {
+            'hostids': [hostid],
+            'selectGroups': ['name']
+        }) or []
+        if hosts:
+            return [g['name'] for g in hosts[0].get('groups', [])]
+    return []
 
 
 def create_tags_list(_bool=False, tag=None, _type=None, zntsettingstag=False):
@@ -395,6 +560,8 @@ def get_send_id(send_to):
 def gen_markup(eventid):
     markup = InlineKeyboardMarkup()
     markup.row_width = zabbix_keyboard_row_width
+    groups = get_event_groups(eventid)
+    groups_param = ','.join(groups) if groups else None
     markup.add(
         InlineKeyboardButton(zabbix_keyboard_button_message,
                              callback_data='{}'.format(json.dumps(dict(action="messages", eventid=eventid)))),
@@ -402,10 +569,15 @@ def gen_markup(eventid):
                              callback_data='{}'.format(json.dumps(dict(action="acknowledge", eventid=eventid)))),
         InlineKeyboardButton(zabbix_keyboard_button_history,
                              callback_data='{}'.format(json.dumps(dict(action="history", eventid=eventid)))),
-        InlineKeyboardButton(zabbix_keyboard_button_history,
+        InlineKeyboardButton(zabbix_keyboard_button_lastvalue,
                              callback_data='{}'.format(json.dumps(dict(action="last value", eventid=eventid)))),
-        InlineKeyboardButton(zabbix_keyboard_button_history,
-                             callback_data='{}'.format(json.dumps(dict(action="graphs", eventid=eventid)))))
+        InlineKeyboardButton(zabbix_keyboard_button_graphs,
+                             callback_data='{}'.format(json.dumps(dict(action="graphs", eventid=eventid)))),
+        InlineKeyboardButton(zabbix_keyboard_button_offline,
+                             callback_data='{}'.format(json.dumps(dict(action="offline", groups=groups_param)))),
+        InlineKeyboardButton(zabbix_keyboard_button_problems,
+                             callback_data='{}'.format(json.dumps(dict(action="problems", groups=groups_param))))
+    )
     return markup
 
 
@@ -495,6 +667,14 @@ def set_period_day_hour(seconds):
 def main():
     graph_period = None
     graph_period_raw = None
+    if args.offline_hosts:
+        loggings.info('Send offline hosts list to {}'.format(args.username))
+        send_offline_hosts(args.username, args.offline_groups)
+        return
+    if args.problems:
+        loggings.info('Send active problems list to {}'.format(args.username))
+        send_problems(args.username, args.problem_groups, args.problem_severity)
+        return
     loggings.info("Send to {} action: {}".format(args.username, args.subject))
     loggings.debug("sys.argv: {}".format(sys.argv[1:]))
     loggings.debug("Send to {}\naction: {}\nxml: {}".format(args.username, args.subject, args.messages))

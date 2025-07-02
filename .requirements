@@ -2,3 +2,5 @@ pyTelegramBotAPI
 pillow
 pysocks
 xmltodict
+openpyxl
+django

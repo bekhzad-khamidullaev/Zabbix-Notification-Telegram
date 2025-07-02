@@ -1,4 +1,4 @@
-#!/usr/lib/zabbix/alertscripts/venv/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ########################
 #    Sokolov Dmitry    #
@@ -12,8 +12,8 @@ __license__ = "MIT"
 
 config_debug_mode = False
 config_exc_info = False
-config_cache_file = '/usr/lib/zabbix/alertscripts/zbxTelegram_files/id.cache'
-config_log_file = '/usr/lib/zabbix/alertscripts/zbxTelegram_files/znt.log'
+config_cache_file = './monitor/zbxTelegram_files/id.cache'
+config_log_file = './monitor/zbxTelegram_files/znt.log'
 
 tg_proxy = False
 tg_proxy_server = {'https': 'socks5://username:password@domen:port'}
@@ -21,7 +21,7 @@ tg_token = '123123123123:ADDDD_er9beG-fGx33ktYqFkUpAdUtWe2s'
 
 watermark = True
 watermark_label = 'Dmitry Sokolov (https://github.com/xxsokolov)'
-watermark_font = '/usr/lib/zabbix/alertscripts/zbxTelegram_files/ArialMT.ttf'
+watermark_font = './monitor/zbxTelegram_files/ArialMT.ttf'
 watermark_minimal_height = 30
 watermark_fill = 255
 watermark_rotate = 0
@@ -77,10 +77,14 @@ trigger_settings_tag_graph_period = 'period='  # period=43200
 
 trigger_info_mentions_tag = 'ZNTMentions'
 
-zabbix_keyboard = False
+zabbix_keyboard = True
 zabbix_keyboard_button_message = 'Message'
 zabbix_keyboard_button_acknowledge = 'Acknowledge'
 zabbix_keyboard_button_history = 'History'
+zabbix_keyboard_button_lastvalue = 'Last value'
+zabbix_keyboard_button_graphs = 'Graphs'
+zabbix_keyboard_button_offline = 'Offline'
+zabbix_keyboard_button_problems = 'Problems'
 zabbix_keyboard_row_width = 3
 
 zabbix_api_url = 'http://127.0.0.1/zabbix/'
