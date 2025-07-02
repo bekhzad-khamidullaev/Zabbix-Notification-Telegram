@@ -81,6 +81,8 @@ zabbix_keyboard = True
 zabbix_keyboard_button_message = 'Message'
 zabbix_keyboard_button_acknowledge = 'Acknowledge'
 zabbix_keyboard_button_history = 'History'
+zabbix_keyboard_button_lastvalue = 'Last value'
+zabbix_keyboard_button_graphs = 'Graphs'
 zabbix_keyboard_button_offline = 'Offline'
 zabbix_keyboard_row_width = 3
 

@@ -287,6 +287,22 @@ def send_offline_hosts(sent_to, groups=None):
         bot.send_message(chat_id=send_id, text='No offline hosts found')
 
 
+def get_event_groups(eventid):
+    data = zabbix_api_request('event.get', {
+        'eventids': [eventid],
+        'selectHosts': ['hostid']
+    }) or []
+    if data and data[0].get('hosts'):
+        hostid = data[0]['hosts'][0].get('hostid')
+        hosts = zabbix_api_request('host.get', {
+            'hostids': [hostid],
+            'selectGroups': ['name']
+        }) or []
+        if hosts:
+            return [g['name'] for g in hosts[0].get('groups', [])]
+    return []
+
+
 def create_tags_list(_bool=False, tag=None, _type=None, zntsettingstag=False):
     tags_list = []
     settings_list = []
@@ -488,6 +504,8 @@ def get_send_id(send_to):
 def gen_markup(eventid):
     markup = InlineKeyboardMarkup()
     markup.row_width = zabbix_keyboard_row_width
+    groups = get_event_groups(eventid)
+    groups_param = ','.join(groups) if groups else None
     markup.add(
         InlineKeyboardButton(zabbix_keyboard_button_message,
                              callback_data='{}'.format(json.dumps(dict(action="messages", eventid=eventid)))),
@@ -495,12 +513,12 @@ def gen_markup(eventid):
                              callback_data='{}'.format(json.dumps(dict(action="acknowledge", eventid=eventid)))),
         InlineKeyboardButton(zabbix_keyboard_button_history,
                              callback_data='{}'.format(json.dumps(dict(action="history", eventid=eventid)))),
-        InlineKeyboardButton(zabbix_keyboard_button_history,
+        InlineKeyboardButton(zabbix_keyboard_button_lastvalue,
                              callback_data='{}'.format(json.dumps(dict(action="last value", eventid=eventid)))),
-        InlineKeyboardButton(zabbix_keyboard_button_history,
+        InlineKeyboardButton(zabbix_keyboard_button_graphs,
                              callback_data='{}'.format(json.dumps(dict(action="graphs", eventid=eventid)))),
         InlineKeyboardButton(zabbix_keyboard_button_offline,
-                             callback_data='{}'.format(json.dumps(dict(action="offline")))))
+                             callback_data='{}'.format(json.dumps(dict(action="offline", groups=groups_param)))))
     return markup
 
 
