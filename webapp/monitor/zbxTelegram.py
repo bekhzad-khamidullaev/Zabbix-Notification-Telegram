@@ -14,7 +14,12 @@ from telebot import apihelper
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from zbxTelegram_files.classes.argparser import ArgParsing
 import xmltodict
-from zbxTelegram_config import *
+from django.conf import settings
+
+# export configuration values from Django settings into module namespace
+for _attr in dir(settings):
+    if _attr.startswith(('config_', 'tg_', 'watermark', 'body_', 'trigger_', 'zabbix_')):
+        globals()[_attr] = getattr(settings, _attr)
 import requests
 import urllib3
 import re

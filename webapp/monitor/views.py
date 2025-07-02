@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from zbxTelegram import get_offline_hosts, get_zabbix_user
+from .zbxTelegram import get_offline_hosts, get_zabbix_user
 
 
 @csrf_exempt

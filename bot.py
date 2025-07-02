@@ -9,8 +9,8 @@ from openpyxl import Workbook
 import telebot
 from telebot import apihelper
 
-from zbxTelegram_config import *
-from zbxTelegram import (
+from django.conf import settings
+from webapp.monitor.zbxTelegram import (
     zabbix_api_request,
     get_chart_png,
     get_offline_hosts,
@@ -21,9 +21,9 @@ from zbxTelegram import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-bot = telebot.TeleBot(tg_token)
-if tg_proxy:
-    apihelper.proxy = tg_proxy_server
+bot = telebot.TeleBot(settings.tg_token)
+if settings.tg_proxy:
+    apihelper.proxy = settings.tg_proxy_server
 
 
 def authorize_user(tg_id):
