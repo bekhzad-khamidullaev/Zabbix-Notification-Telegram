@@ -28,6 +28,8 @@
 - Маппинг Emoji статуса и важности события.
 - Наложение watermark на изображение.
 - Обьединение графиков в альбом.
+- Получение списка оффлайн хостов по выбранным группам и отправка Excel-файла в Telegram (опции `--offline-hosts` и `--offline-groups`).
+- Работа с кнопками через скрипт `bot.py`: подтверждение событий, история, последние значения, графики и получение оффлайн хостов через кнопку.
 
 ## Планы
 - Обработка быстрых команд ботом <img alt="AppVeyor" src="https://img.shields.io/static/v1?label=status&message=beta&color=yellow?logo=appveyor">
@@ -116,10 +118,11 @@ $ git clone https://github.com/xxsokolov/Zabbix-Notification-Telegram.git .
 |trigger_settings_tag_graph_exploded|sting||'graph_exploded'|
 |trigger_settings_tag_graph_period|sting||'period='|
 |trigger_info_mentions_tag|sting||'ZNTMentions'|
-|zabbix_keyboard|bool|Добавление кнопок к сообщению. <br>(*В стадии разработки*)|False|
+|zabbix_keyboard|bool|Добавление кнопок к сообщению.|True|
 |zabbix_keyboard_button_message|sting|Имя кнопки "Добавить сообщение к событию"|```Message```|
 |zabbix_keyboard_button_acknowledge|sting|Имя кнопки "Подтверждение события"|```Acknowledge```|
 |zabbix_keyboard_button_history|sting|Имя кнопки "Прислать сообщение (пять последних событий)" по данному элементу данных|```History```|
+|zabbix_keyboard_button_offline|sting|Имя кнопки "Список оффлайн хостов"|```Offline```|
 |zabbix_keyboard_row_width|int|Количество кнопок в строке|3|
 |zabbix_api_url|sting|Урл до Zabbix сервера|```http://127.0.0.1/zabbix/```|
 |zabbix_api_login|sting|Учетная запись|```Admin```|

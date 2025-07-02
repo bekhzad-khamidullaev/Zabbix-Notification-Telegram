@@ -49,6 +49,8 @@ class ArgParsing:
         self.parser.add_argument('messages', nargs='?', help='Set message')
         self.parser.add_argument('token', nargs='?', help='Set token', default=False)
         self.parser.add_argument('--debug', type=str, nargs='?', const=True, default=False, help='Debug mode')
+        self.parser.add_argument('--offline-hosts', action='store_true', help='Send offline hosts list')
+        self.parser.add_argument('--offline-groups', help='Comma separated list of host groups for offline hosts')
         # res = parser.parse_args()
 
         return self.parser

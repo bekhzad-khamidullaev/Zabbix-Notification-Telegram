@@ -77,10 +77,11 @@ trigger_settings_tag_graph_period = 'period='  # period=43200
 
 trigger_info_mentions_tag = 'ZNTMentions'
 
-zabbix_keyboard = False
+zabbix_keyboard = True
 zabbix_keyboard_button_message = 'Message'
 zabbix_keyboard_button_acknowledge = 'Acknowledge'
 zabbix_keyboard_button_history = 'History'
+zabbix_keyboard_button_offline = 'Offline'
 zabbix_keyboard_row_width = 3
 
 zabbix_api_url = 'http://127.0.0.1/zabbix/'
