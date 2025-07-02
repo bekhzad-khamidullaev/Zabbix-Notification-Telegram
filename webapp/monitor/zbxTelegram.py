@@ -12,7 +12,7 @@ __license__ = "MIT"
 import telebot
 from telebot import apihelper
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from zbxTelegram_files.classes.argparser import ArgParsing
+from .argparser import ArgParsing
 import xmltodict
 from django.conf import settings
 
