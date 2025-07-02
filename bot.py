@@ -15,6 +15,7 @@ from zbxTelegram import (
     get_chart_png,
     get_offline_hosts,
     get_problems,
+    get_zabbix_user,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +24,13 @@ logger = logging.getLogger(__name__)
 bot = telebot.TeleBot(tg_token)
 if tg_proxy:
     apihelper.proxy = tg_proxy_server
+
+
+def authorize_user(tg_id):
+    user = get_zabbix_user(tg_id)
+    if not user:
+        return None
+    return int(user.get('type', 1))
 
 
 def acknowledge_event(eventid, message="Acknowledged via bot"):
@@ -143,11 +151,19 @@ def send_problems(chat_id, groups=None, severity=None):
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    bot.reply_to(message, 'Zabbix helper bot active.')
+    user_type = authorize_user(message.from_user.id)
+    if user_type is None:
+        bot.reply_to(message, 'Access denied')
+        return
+    levels = {1: 'user', 2: 'admin', 3: 'super admin'}
+    bot.reply_to(message, f"Zabbix helper bot active. Your role: {levels.get(user_type, 'user')}")
 
 
 @bot.message_handler(commands=['offline'])
 def handle_offline(message):
+    if authorize_user(message.from_user.id) is None:
+        bot.reply_to(message, 'Access denied')
+        return
     parts = message.text.split(maxsplit=1)
     groups = parts[1] if len(parts) > 1 else None
     send_offline(message.chat.id, groups)
@@ -155,6 +171,9 @@ def handle_offline(message):
 
 @bot.message_handler(commands=['problems'])
 def handle_problems(message):
+    if authorize_user(message.from_user.id) is None:
+        bot.reply_to(message, 'Access denied')
+        return
     parts = message.text.split(maxsplit=2)
     groups = parts[1] if len(parts) > 1 else None
     severity = int(parts[2]) if len(parts) > 2 else None
@@ -163,6 +182,9 @@ def handle_problems(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
+    if authorize_user(call.from_user.id) is None:
+        bot.answer_callback_query(call.id, 'Access denied')
+        return
     try:
         data = json.loads(call.data)
     except Exception:

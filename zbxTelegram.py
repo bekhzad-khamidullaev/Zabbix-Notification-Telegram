@@ -237,6 +237,15 @@ def zabbix_api_request(method, params=None):
         return None
 
 
+def get_zabbix_user(tg_id):
+    """Lookup user in Zabbix by Telegram ID stored as alias."""
+    res = zabbix_api_request('user.get', {
+        'filter': {'alias': str(tg_id)},
+        'output': ['userid', 'type', 'name']
+    }) or []
+    return res[0] if res else None
+
+
 def get_offline_hosts(groups=None):
     params = {
         "output": ["host"],
