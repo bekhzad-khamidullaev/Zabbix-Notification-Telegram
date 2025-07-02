@@ -3,3 +3,4 @@ pillow
 pysocks
 xmltodict
 openpyxl
+django

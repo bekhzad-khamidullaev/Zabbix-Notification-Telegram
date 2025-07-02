@@ -28,6 +28,7 @@
 - Маппинг Emoji статуса и важности события.
 - Наложение watermark на изображение.
 - Обьединение графиков в альбом.
+- Бот работает на любой машине и взаимодействует с Zabbix только через API.
 - Получение списка оффлайн хостов по выбранным группам и отправка Excel-файла в Telegram (опции `--offline-hosts` и `--offline-groups`).
 - Получение списка активных проблем по выбранным группам с фильтром по уровню серьёзности (опции `--problems`, `--problem-groups`, `--problem-severity`).
 - Работа с кнопками через отдельный скрипт `bot.py`: подтверждение событий, история, последние значения, графики и получение оффлайн хостов через кнопку. Запускается `python3 bot.py`. Кнопка *Offline* использует группы того хоста, для которого пришло событие.
@@ -40,10 +41,11 @@
 Для работы потребуется Python 3+ и Zabbix 3+.
 #### Установка из source (git requires)*:
 ```
-$ cd /usr/lib/zabbix/alertscripts
-$ git clone https://github.com/xxsokolov/Zabbix-Notification-Telegram.git .
+$ git clone https://github.com/xxsokolov/Zabbix-Notification-Telegram.git
+$ cd Zabbix-Notification-Telegram
 ```
-После этого нотификатор практически готов к работе, потребуется еще несколько шагов.
+Нотификатор можно размещать на любой машине, имеющей доступ к Zabbix API.
+После клонирования выполните настройку конфигурации.
 
 *Подробную инструкцию вы можете найти на wiki*: <a href="https://github.com/xxsokolov/Zabbix-Notification-Telegram/wiki/Установка-нотификатора-Zabbix-Notification-Telegram" target="_blank">RU</a>, ENG (vacant)
 
@@ -62,14 +64,14 @@ $ git clone https://github.com/xxsokolov/Zabbix-Notification-Telegram.git .
 |---|-----------|--------|------------|
 |config_debug_mode|bool|Логирование в режиме debug| False|
 |config_exc_info|bool|Более детальный режим debug|False|
-|config_cache_file|string|Абсолютный путь до cash файла|```/usr/lib/zabbix/alertscripts/zbxTelegram_files/id.cache```|
-|config_log_file|string|Абсолютный путь до log файла|```/usr/lib/zabbix/alertscripts/zbxTelegram_files/znt.log```|
+|config_cache_file|string|Путь до cash файла|```./zbxTelegram_files/id.cache```|
+|config_log_file|string|Путь до log файла|```./zbxTelegram_files/znt.log```|
 |tg_proxy|bool|Использовать прокси для отправки сообщений в Telegram|True|
 |tg_proxy_server|dict|Ссылка до Вашего прокси|```{'https': 'socks5://username:password@domen:port'}```
 |tg_token|string|Тот самый token, который Вы получали у <a href="https://core.telegram.org/bots#botfather" target="_blank">@BotFather</a>|```123123123123:ADDDD_er9beG-fGx33ktYqFkUpAdUtWe2s```|
 |watermark|bool|Наносить ватермарку на изображение графика|True|
 |watermark_label|string|Текст наносимый на изображение графика|'Dmitry Sokolov (https://github.com/xxsokolov)'|
-|watermark_font|string|Путь до файла шрифта|```/usr/lib/zabbix/alertscripts/zbxTelegram_files/ArialMT.ttf```|
+|watermark_font|string|Путь до файла шрифта|```./zbxTelegram_files/ArialMT.ttf```|
 |watermark_minimal_height|string|Минимальный размер изображения графика для нанесения ватермарки|30|
 |watermark_fill|string||255|
 |watermark_rotate|string||0|
@@ -204,7 +206,7 @@ _В XML документах фрагмент, помещенный внутрь
 
 ## Логирование
 
-Все основные события (отправка, добавления в cash файл, изменение группы в суппергруппу, ошибки, дебаг) логируются в файле ```znt.log```, Вы можете его найти по умолчанию ```/usr/lib/zabbix/alertscripts/zbxTelegram_files/znt.log``` (<a href="https://github.com/xxsokolov/Zabbix-Notification-Telegram/blob/master/zbxTelegram_config.example.py#L15" target="_blank">config_log_file</a>])
+Все основные события (отправка, добавления в cash файл, изменение группы в суппергруппу, ошибки, дебаг) логируются в файле ```znt.log```, путь настраивается в опции <a href="https://github.com/xxsokolov/Zabbix-Notification-Telegram/blob/master/zbxTelegram_config.example.py#L15" target="_blank">config_log_file</a>
 Поддерживаются три режима логирования:
 1. Обычный(по-умолчанию), ведется минимальный log об операциях в нотификаторе;
 2. <a href="https://github.com/xxsokolov/Zabbix-Notification-Telegram/blob/master/zbxTelegram_config.example.py#L12" target="_blank">Debug</a>], более детальный log, требуется только для анализа ошибок в работе нотификатора *(по-умолчанию False)*;
