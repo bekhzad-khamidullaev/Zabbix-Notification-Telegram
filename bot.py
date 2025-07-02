@@ -14,6 +14,7 @@ from zbxTelegram import (
     zabbix_api_request,
     get_chart_png,
     get_offline_hosts,
+    get_problems,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -129,6 +130,17 @@ def send_offline(chat_id, groups=None):
         bot.send_message(chat_id, 'No offline hosts found')
 
 
+def send_problems(chat_id, groups=None, severity=None):
+    problems = get_problems(groups, severity)
+    if not problems:
+        bot.send_message(chat_id, 'No active problems')
+        return
+    lines = []
+    for host, name, sev, clk in problems:
+        lines.append(f'{host}: {name} (S{sev}) at {clk}')
+    bot.send_message(chat_id, '\n'.join(lines))
+
+
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     bot.reply_to(message, 'Zabbix helper bot active.')
@@ -139,6 +151,14 @@ def handle_offline(message):
     parts = message.text.split(maxsplit=1)
     groups = parts[1] if len(parts) > 1 else None
     send_offline(message.chat.id, groups)
+
+
+@bot.message_handler(commands=['problems'])
+def handle_problems(message):
+    parts = message.text.split(maxsplit=2)
+    groups = parts[1] if len(parts) > 1 else None
+    severity = int(parts[2]) if len(parts) > 2 else None
+    send_problems(message.chat.id, groups, severity)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -154,6 +174,11 @@ def handle_callback(call):
     if action == 'offline':
         groups = data.get('groups')
         send_offline(chat_id, groups)
+        bot.answer_callback_query(call.id)
+        return
+    if action == 'problems':
+        groups = data.get('groups')
+        send_problems(chat_id, groups)
         bot.answer_callback_query(call.id)
         return
     if not eventid:

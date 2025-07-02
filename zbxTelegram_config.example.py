@@ -84,6 +84,7 @@ zabbix_keyboard_button_history = 'History'
 zabbix_keyboard_button_lastvalue = 'Last value'
 zabbix_keyboard_button_graphs = 'Graphs'
 zabbix_keyboard_button_offline = 'Offline'
+zabbix_keyboard_button_problems = 'Problems'
 zabbix_keyboard_row_width = 3
 
 zabbix_api_url = 'http://127.0.0.1/zabbix/'

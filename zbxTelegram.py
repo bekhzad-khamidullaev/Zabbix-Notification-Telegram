@@ -287,6 +287,48 @@ def send_offline_hosts(sent_to, groups=None):
         bot.send_message(chat_id=send_id, text='No offline hosts found')
 
 
+def get_problems(groups=None, severity=None, limit=10):
+    params = {
+        'output': ['eventid', 'name', 'clock', 'severity'],
+        'sortfield': 'clock',
+        'sortorder': 'DESC',
+        'limit': limit,
+        'selectHosts': ['host'],
+    }
+    group_ids = []
+    if groups:
+        groups = [g.strip() for g in groups.split(',') if g.strip()]
+        if groups:
+            res = zabbix_api_request('hostgroup.get', {
+                'output': ['groupid', 'name'],
+                'filter': {'name': groups}
+            }) or []
+            group_ids = [g['groupid'] for g in res]
+            if group_ids:
+                params['groupids'] = group_ids
+    if severity is not None:
+        params['min_severity'] = int(severity)
+    problems = zabbix_api_request('problem.get', params) or []
+    result = []
+    for pr in problems:
+        host = pr.get('hosts', [{}])[0].get('host')
+        result.append(
+            (host, pr.get('name'), pr.get('severity'), pr.get('clock')))
+    return result
+
+
+def send_problems(sent_to, groups=None, severity=None, limit=10):
+    send_id = get_send_id(sent_to)
+    problems = get_problems(groups, severity, limit)
+    if not problems:
+        bot.send_message(send_id, 'No active problems')
+        return
+    lines = []
+    for host, name, sev, clk in problems:
+        lines.append('{}: {} (S{}) at {}'.format(host, name, sev, clk))
+    bot.send_message(send_id, '\n'.join(lines))
+
+
 def get_event_groups(eventid):
     data = zabbix_api_request('event.get', {
         'eventids': [eventid],
@@ -518,7 +560,10 @@ def gen_markup(eventid):
         InlineKeyboardButton(zabbix_keyboard_button_graphs,
                              callback_data='{}'.format(json.dumps(dict(action="graphs", eventid=eventid)))),
         InlineKeyboardButton(zabbix_keyboard_button_offline,
-                             callback_data='{}'.format(json.dumps(dict(action="offline", groups=groups_param)))))
+                             callback_data='{}'.format(json.dumps(dict(action="offline", groups=groups_param)))),
+        InlineKeyboardButton(zabbix_keyboard_button_problems,
+                             callback_data='{}'.format(json.dumps(dict(action="problems", groups=groups_param))))
+    )
     return markup
 
 
@@ -611,6 +656,10 @@ def main():
     if args.offline_hosts:
         loggings.info('Send offline hosts list to {}'.format(args.username))
         send_offline_hosts(args.username, args.offline_groups)
+        return
+    if args.problems:
+        loggings.info('Send active problems list to {}'.format(args.username))
+        send_problems(args.username, args.problem_groups, args.problem_severity)
         return
     loggings.info("Send to {} action: {}".format(args.username, args.subject))
     loggings.debug("sys.argv: {}".format(sys.argv[1:]))
