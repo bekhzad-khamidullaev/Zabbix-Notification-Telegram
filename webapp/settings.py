@@ -10,6 +10,18 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
     'monitor',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'channels',
+    'django_celery_beat',
+    'webapp.configuration',
+    'webapp.accounts',
+    'webapp.dashboard',
+    'webapp.alerts',
+    'webapp.notifications',
+    'webapp.integrations',
+    'webapp.utils',
+    'webapp.channels_ws',
 ]
 MIDDLEWARE = ['django.middleware.common.CommonMiddleware']
 ROOT_URLCONF = 'webapp.urls'
@@ -126,4 +138,46 @@ zabbix_status_emoji_map = {
     'High': '❤️',
     'Disaster': '💔',
     'Test': '🚽💩',
+}
+
+# Modern UI settings
+AUTH_USER_MODEL = 'accounts.User'
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+ASGI_APPLICATION = 'webapp.asgi.application'
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/1',
+        'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+    }
+}
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': ['redis://localhost:6379/2'],
+        },
+    },
+}
+CELERY_BROKER_URL = 'redis://localhost:6379/3'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/4'
+CELERY_BEAT_SCHEDULE = {
+    'poll-zabbix-events': {
+        'task': 'webapp.channels_ws.tasks.poll_zabbix_events',
+        'schedule': 10,
+    }
+}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'zabbixui',
+        'USER': 'zabbixui',
+        'PASSWORD': 'zabbixui',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
