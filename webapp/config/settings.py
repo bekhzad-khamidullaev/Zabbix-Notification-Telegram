@@ -24,9 +24,9 @@ INSTALLED_APPS = [
     'webapp.channels_ws',
 ]
 MIDDLEWARE = ['django.middleware.common.CommonMiddleware']
-ROOT_URLCONF = 'webapp.urls'
+ROOT_URLCONF = 'webapp.config.urls'
 TEMPLATES = []
-WSGI_APPLICATION = 'webapp.wsgi.application'
+WSGI_APPLICATION = 'webapp.config.wsgi.application'
 
 # Telegram and Zabbix configuration
 config_exc_info = False
@@ -147,7 +147,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
-ASGI_APPLICATION = 'webapp.asgi.application'
+ASGI_APPLICATION = 'webapp.config.asgi.application'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',

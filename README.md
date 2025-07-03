@@ -12,7 +12,7 @@ This project provides a Telegram bot and a small Django web application for inte
    ```bash
    pip install -r .requirements
    ```
-3. Edit `webapp/settings.py` and update the Telegram token and Zabbix API connection parameters.
+3. Edit `webapp/config/settings.py` and update the Telegram token and Zabbix API connection parameters.
 
 ## Usage
 Start the polling bot:
@@ -22,7 +22,7 @@ python3 webapp/monitor/bot.py
 
 Run the web application for API access:
 ```bash
-python3 webapp/manage.py runserver
+python3 manage.py runserver
 ```
 
 The endpoint `/offline/` returns offline hosts for an authorised Telegram ID. Inline buttons in the bot allow viewing event history, last values, graphs, active problems and downloading an offline host list.
